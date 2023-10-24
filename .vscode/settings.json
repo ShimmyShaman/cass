@@ -1,0 +1,40 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/source",
+    "editor.wordWrap": "on",
+    "workbench.colorTheme": "Default Dark Modern",
+    "editor.rulers": [130],
+    "multiCommand.commands": [
+        {
+            "command": "multiCommand.scrollUpTerminalBackToEditor",
+            "sequence": [
+                "workbench.action.terminal.focus",
+                "workbench.action.terminal.scrollUp",
+                "workbench.action.terminal.scrollUp",
+                "workbench.action.terminal.scrollUp",
+                "workbench.action.terminal.scrollUp",
+                "workbench.action.terminal.scrollUp",
+                "workbench.action.focusFirstEditorGroup",
+            ],
+        },
+        {
+            "command": "multiCommand.scrollDownTerminalBackToEditor",
+            "sequence": [
+                "workbench.action.terminal.focus",
+                "workbench.action.terminal.scrollDown",
+                "workbench.action.terminal.scrollDown",
+                "workbench.action.terminal.scrollDown",
+                "workbench.action.focusFirstEditorGroup",
+            ],
+        },
+        // {
+        //     "command": "multiCommand.swapChar",
+        //     "interval": 30,
+        //     "sequence": [
+        //         "cursorLeftSelect",
+        //         "editor.action.clipboardCutAction",
+        //         "cursorRight",
+        //         "editor.action.clipboardPasteAction"
+        //     ]
+        // }
+    ]
+}
