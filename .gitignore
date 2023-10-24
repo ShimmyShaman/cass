@@ -60,3 +60,6 @@ cli/deps
 **.jpg
 **.jpeg
 **.png
+
+# OpenAI_API_Key
+OpenAI_API_Key.txt
