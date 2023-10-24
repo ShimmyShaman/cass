@@ -8,15 +8,21 @@ if ! test -f "$ODIN"; then
 fi
 
 # Arguments
-if [ $# -ne 2 ]; then
-    echo "Usage: compile.sh <collection_dir> <bin_dir>"
-    exit 1
+# if [ $# -ne 2 ]; then
+#     echo "Usage: compile.sh <collection_dir> <bin_dir>"
+#     exit 1
+# fi
+COLDIR=dep # Collection Directory
+BINDIR=bin # Binary Directory
+EXE=cass
+
+# Bin
+if ! test -d $BINDIR; then
+    mkdir BINDIR
 fi
-COLDIR=$1 # Collection Directory
-BINDIR=$2
 
 echo "########################################"
-echo "############### Launcher ###############"
+echo "################# Cass #################"
 echo "########################################"
 
 # echo $(pwd)
@@ -31,18 +37,20 @@ echo "########################################"
 # /home/rolly/proj/Odin/vendor/stb/lib/stb_image.a
 # $ODIN run ./src/kgs -debug -out:$EXE
 
-$ODIN build ./src -extra-linker-flags:"-lstdc++ -lvulkan" -collection:violin=$COLDIR/violin -collection:common=$COLDIR/common \
-    -debug -out:$BINDIR/launcher
+$ODIN build ./src -extra-linker-flags:"-lstdc++ -lvulkan" -collection:violin=$COLDIR/violin \
+    -debug -out:$BINDIR/$EXE
 
 retval=$?
 if [ $retval -ne 0 ]; then
     echo "########################################"
-    echo "######## Compilation Failed : $retval #########"
+    echo "####### Compilation Failed : $retval ########"
     echo "########################################"
-# else
-    # echo "######## Compilation Succeeded #########"
+else
+    echo "######## Compilation Succeeded #########"
     #  -- Running...
-#     $BIN/launcher
+    cd $BINDIR
+    ./$EXE
+    cd -
 #     # valgrind -s 
 fi
 

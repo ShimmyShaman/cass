@@ -3,6 +3,10 @@
         {
             "name": "core",
             "path": "/home/rolly/core"
+        },
+        {
+            "name": "violin",
+            "path": "dep/violin"
         }
     ],
     "enable_document_symbols": true,
