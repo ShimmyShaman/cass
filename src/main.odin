@@ -18,15 +18,55 @@ import stbtt "vendor:stb/truetype"
 import vi "violin:vsr"
 import vig "violin:gui"
 
-// import cn "common:net"
-// import cg "common:ag"
-// import cu "common:utility"
+CassAppError :: enum {
+  Success,
+  NotYetDetailed = auto_cast vi.Error.MAX_EXTENT_VALUE,
+  NetworkError,
+  AllocationFailed,
+  FailedToOpenCurrentDirectory,
+  FailedToReadCurrentDirectory,
+  FailedToReadDirectoryFile,
+}
 
-// // TODO -- put this in a seperate 'config' file
-// GATEWAY_IP_ADDRESS :: "127.0.0.1"
-// GATEWAY_PORT :: 1434
+CassState :: enum {
+  Initializing,
+  ConnectingToServer,
+  RetrievingServiceInfo,
+  ClientVerified,
+  FatalError,
+}
 
-// import rf "core:reflect"
+AlternateThreadState :: enum {
+  Uninitiated,
+  Running,
+  Stopped,
+}
+
+CassAppData :: struct {
+  // settings: ClientSettings,
+  alt_thread: ^thread.Thread,
+  alt_err: CassAppError,
+  alt_state: AlternateThreadState,
+  alt_sync: sync.Mutex,
+  // alt_data: union {
+  //   ExistingFileSearch,
+  // },
+
+  vctx: ^vi.Context,
+  gui: ^vig.GUIRoot,
+
+  strbld: strings.Builder,
+
+  loop_start: time.Time,
+  frame_elapsed, total_elapsed: f32,
+  min_fps, max_fps: int,
+  historical_frame_count: int,
+
+  state: CassState,
+  state_sync: sync.Mutex,
+  state_transition_time: time.Time,
+  state_retry_count: int,
+}
 
 main :: proc() {
 
