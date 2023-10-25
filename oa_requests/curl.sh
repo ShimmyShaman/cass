@@ -93,5 +93,71 @@ curl https://api.openai.com/v1/chat/completions -H "Content-Type: application/js
 #############################################################
 #############################################################
 #############################################################
-
-
+curl https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer $(cat OpenAI_API_Key.txt)"   -d '{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are the specialist for the GUI team of a pyqt5 desktop application. Your task is to create a bullet pointed list (step-by-step process) of implementable actions that your software programmer can take to implement a feature request from a user.\n\nThe following is the current code:\nimport sys\nfrom PyQt5.QtCore import *\nfrom PyQt5.QtGui import *\nfrom PyQt5.QtWidgets import *\n\ndef window():\napp = QApplication(sys.argv)\nw = QWidget()\nb = QLabel(w)\nw.setGeometry(300,200,1100,540)\nw.setWindowTitle(\"PyQt5\")\nb.setText(\"Hello World!\")\nb.move(500,200)\nw.show()\nsys.exit(app.exec_())\nif __name__ == \"__main__\":\nwindow()"
+    },
+    {
+      "role": "user",
+      "content": "[FeatureRequest] Centered in the lower 60 pixels of the screen, I want a textbox with a submit button to the right of it. The textbox should have default text saying \"Enter your command here...\". In 50 words or less."
+    }
+  ]
+}'
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+{
+  "id": "chatcmpl-8DN29vvBWr3mvPprMobOil5GYlKl3",
+  "object": "chat.completion",
+  "created": 1698197497,
+  "model": "gpt-3.5-turbo-0613",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "To implement the requested feature, the software programmer can take the following actions:
+        
+        1. Import the required modules for the new components: QLineEdit for the textbox and QPushButton for the submit button.
+        2. Create the textbox and submit button objects using the respective classes.
+        3. Set the default text for the textbox using the QLineEdit.setText() method and pass in the desired default text.
+        4. Set the position and size of the textbox using the QLineEdit.setGeometry() method, specifying the desired position and dimensions.
+        5. Set the position of the submit button relative to the textbox using the QPushButton.move() method, ensuring it is placed to the right of the textbox.
+        6. Create a layout (e.g., QVBoxLayout) for the main window to properly position the new components.
+        7. Add the textbox and submit button to the layout using the layout.addWidget() method.
+        8. Set the layout for the main window using the QWidget.setLayout() method, passing in the created layout.
+        9. Adjust the main window's size and position to center it in the lower 60 pixels of the screen using the QWidget.setGeometry() method.
+        10. Update the window title using the QWidget.setWindowTitle() method, passing in the desired title.
+        11. Run the application using the app.exec_() method."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 212,
+    "completion_tokens": 252,
+    "total_tokens": 464
+  }
+}
+#############################################################
+#############################################################
+#############################################################
+curl https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer $(cat OpenAI_API_Key.txt)"   -d '{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are the coder for the GUI team of a pyqt5 desktop application. Your task is to use the bullet pointed list (step-by-step process) of implementable actions that your software programmer can take to implement a feature request from a user.\n\nThe following is the current code:\nimport sys\nfrom PyQt5.QtCore import *\nfrom PyQt5.QtGui import *\nfrom PyQt5.QtWidgets import *\n\ndef window():\napp = QApplication(sys.argv)\nw = QWidget()\nb = QLabel(w)\nw.setGeometry(300,200,1100,540)\nw.setWindowTitle(\"PyQt5\")\nb.setText(\"Hello World!\")\nb.move(500,200)\nw.show()\nsys.exit(app.exec_())\nif __name__ == \"__main__\":\nwindow()"
+    },
+    {
+      "role": "user",
+      "content": "[FeatureRequest] Centered in the lower 60 pixels of the screen, I want a textbox with a submit button to the right of it. The textbox should have default text saying \"Enter your command here...\"."
+    },
+    {
+      "role": "user",
+      "content": "To implement the requested feature, the software programmer can take the following actions:\n\n1. Import the required modules for the new components: QLineEdit for the textbox and QPushButton for the submit button.\n2. Create the textbox and submit button objects using the respective classes.\n3. Set the default text for the textbox using the QLineEdit.setText() method and pass in the desired default text.\n4. Set the position and size of the textbox using the QLineEdit.setGeometry() method, specifying the desired position and dimensions.\n5. Set the position of the submit button relative to the textbox using the QPushButton.move() method, ensuring it is placed to the right of the textbox.\n6. Create a layout (e.g., QVBoxLayout) for the main window to properly position the new components.\n7. Add the textbox and submit button to the layout using the layout.addWidget() method.\n8. Set the layout for the main window using the QWidget.setLayout() method, passing in the created layout.\n9. Adjust the main windows size and position to center it in the lower 60 pixels of the screen using the QWidget.setGeometry() method.\n10. Update the window title using the QWidget.setWindowTitle() method, passing in the desired title.\n11. Run the application using the app.exec_() method."
+    }
+  ]
+}'
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

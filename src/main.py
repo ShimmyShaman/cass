@@ -5,13 +5,16 @@ from PyQt5.QtWidgets import *
 
 def window():
    app = QApplication(sys.argv)
-   w = QWidget()
-   b = QLabel(w)
-   w.setGeometry(300,200,1100,540)
-   w.setWindowTitle("PyQt5")
+
+   win = QWidget()
+   win.setGeometry(240,180,1400,640)
+   win.setWindowTitle("cass")
+
+   b = QLabel(win)
    b.setText("Hello World!")
-   b.move(500,200)
-   w.show()
+   b.move(240,180)
+   
+   win.show()
    sys.exit(app.exec_())
-if __name__ == '__main__':
+if __name__ == "__main__":
    window()

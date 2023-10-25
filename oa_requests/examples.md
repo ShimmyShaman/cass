@@ -1,6 +1,10 @@
 # Examples
 
-## Interaction
+## cass
+
+* [Command]Centered in the lower 60 pixels of the screen, I want a textbox with a submit button to the right of it. The textbox should have default text saying 'Enter your command here...'.
+
+## AMMO
 
 * [Command]When I hold down right click, I want the character to rotate according to the horizontal mouse movement. The camera alone should also respond to the vertical mouse movement.
   * [Answer]
@@ -24,7 +28,7 @@
         }
       }
       if input.mouse_locked {
-      // Player Orientation
+        // Player Orientation
         player.rot += mx.wrap(cast(f32) input.mouse_delta.x * settings.mouse_x_sensitivity, mx.PI * 2)
         player.cam_pitch = clamp(player.cam_pitch + cast(f32) input.mouse_delta.y * settings.mouse_y_sensitivity,
                             -mx.PI * 15 / 16, mx.PI * 15 / 16)
