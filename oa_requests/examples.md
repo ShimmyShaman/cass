@@ -41,3 +41,4 @@
   * _Relevant Context_:
     * PlayerInput is handled through updating the PlayerInput data structure in an input_event-like function then updating in a seperate update_movement-like function. The EngageWorld flag is set/cleared to the input_action field of the PlayerInput data structure upon press/release of the right mouse button.
     * the update_player_movement() function in the world.odin file is the most appropriate place to handle this.
+* [Command] 

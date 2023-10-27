@@ -160,4 +160,36 @@ curl https://api.openai.com/v1/chat/completions -H "Content-Type: application/js
     }
   ]
 }'
+#############################################################
+#############################################################
+#############################################################
+curl https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer $(cat OpenAI_API_Key.txt)"   -d '{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a code reviewer. Your programming language is ODIN. Your task is to ensure a \"gs: ^GameSimulator\" exists in the users code. If it is not in the users code, you must modify the code to add it. If it is present, you simply reply \"Ok\". Example: user_proc :: proc(gs: ^GameSimulator) {\n\n}"
+    },
+    {
+      "role": "user",
+      "content": "create_avatar :: proc(gs: ^GameSimulator) {\n\n}"
+    }
+  ]
+}'
+#############################################################
+#############################################################
+#############################################################
+curl https://api.openai.com/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer $(cat OpenAI_API_Key.txt)"   -d '{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a coder. Your programming language is ODIN. Your task is to complete a user function that interacts with the simulator by queuing thread-safe commands. Eg. purchase_item :: proc(gs: ^GameSimulator, vendor_uid: u32, avatar_account_uid: u32) {\n  }"
+    },
+    {
+      "role": "user",
+      "content": "create_avatar :: proc(gs: ^GameSimulator, account_uid: u32) {\n\n}"
+    }
+  ]
+}'
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
