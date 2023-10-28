@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import *
 class MyWindow(QWidget):
    def __init__(self):
       super().__init__()
-      self.setGeometry(240,180,1400,640)
+      self.setGeometry(140,180,1700,740)
       self.setWindowTitle("cass")
       self.setWindowFlag(Qt.FramelessWindowHint)
 
@@ -18,28 +18,36 @@ class MyWindow(QWidget):
       # Win View
       win_view = QVBoxLayout()
       win_view.setContentsMargins(0,0,0,0)
+      
       grab_bar = QLabel()
       grab_bar.setFixedHeight(18)
       grab_bar.setStyleSheet("background-color: #1e2a5a;")
-      app_view = QHBoxLayout()
       win_view.addWidget(grab_bar)
-      win_view.addLayout(app_view)
 
       # App View
-      app_view.setSpacing(4)
+      app_view = QGridLayout()
+      app_view.setContentsMargins(0,0,0,0)
+      app_view.setSpacing(0)
+      app_view.setColumnStretch(0, 1)
+      app_view.setColumnStretch(1, 2)
+      app_view.setColumnStretch(2, 5)
+      win_view.addLayout(app_view)
+
+      # Project View
+      self.init_project_view(app_view)
+
+      # AI View
+      self.init_ai_view(app_view)
+
+      # Working View
+      self.init_working_view(app_view)
+
+      self.setLayout(win_view)
+
+   def init_project_view(self, app_view):
       project_view = QVBoxLayout()
       project_view.setSpacing(2)
-      working_view = QGridLayout()
-      app_view.addLayout(project_view)
-      app_view.addLayout(working_view)
-
-      label = QLabel()
-      label.setText("Working View")
-      label.setStyleSheet("background-color: #121724; font-size: 24px; color: #fafafa;")
-      label.setAlignment(Qt.AlignCenter)
-      label.setMinimumSize(1000, 600)
-      label.setAutoFillBackground(True)
-      working_view.addWidget(label)
+      app_view.addLayout(project_view, 0, 0)
 
       self.project_button = QPushButton(self)
       self.project_button.setText("Open Project...")
@@ -52,8 +60,10 @@ class MyWindow(QWidget):
       self.file_system_model.setRootPath('')
       self.tree = QTreeView()
       self.tree.setModel(self.file_system_model)
-      
-      self.tree.setMaximumWidth(320)
+   
+      # self.tree.setMaximumWidth(320)
+      # self.tree.setMinimumWidth(320)
+      self.tree.setFixedWidth(320)
       self.tree.setAnimated(False)
       self.tree.setIndentation(20)
       self.tree.setSortingEnabled(True)
@@ -63,19 +73,72 @@ class MyWindow(QWidget):
       self.tree.setGeometry(QRect(4, 40, 640, 160))
 
       self.tree.doubleClicked.connect(treeDoubleClick)
-      
+   
       self.tree.setWindowTitle("Dir View")
       self.tree.resize(640, 480)
       project_view.addWidget(self.tree)
-      # Set the layout to the left hand side of the window
-      # windowLayout.setGeometry(QRect(4, 40, 640, 160))
-      # windowLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
-      self.setLayout(win_view)
+
+   def init_ai_view(self, app_view):
+      ai_view = QStackedLayout()
+      # ai_view.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+      app_view.addLayout(ai_view, 0, 1)
+
+      chat_scroll = QScrollArea()
+      chat_scroll.setFixedWidth(380)
+      chat_scroll.horizontalScrollBar().hide()
+      ai_view.addWidget(chat_scroll)
+      
+      # Create and add 5 labels to the scroll area
+      chat_scroll_content = QWidget()
+      # chat_scroll_content.setFixedWidth(320)
+      chat_scroll_content.setLayout(QVBoxLayout())
+      chat_scroll_content.layout().setAlignment(Qt.AlignBottom)
+
+      # chat_scroll.setMaximumWidth(320)
+      chat_scroll.setWidget(chat_scroll_content)
+      chat_scroll.setWidgetResizable(True)
+
+      for i in range(9):
+         label = QLabel()
+         label.setText("Chat " + str(i) + "\nAnother series of words of big\n bang and hokus pokus\n and other stuff.")
+         label.setStyleSheet("background-color: #82A794; font-size: 17px; color: #1a1a1a;")
+         label.setAlignment(Qt.AlignCenter)
+         label.setWordWrap(True)
+      # label.setMinimumSize(1000, 600)
+         label.setAutoFillBackground(True)
+         chat_scroll_content.layout().addWidget(label)
+
+   def init_working_view(self, app_view):
+      working_view = QGridLayout()
+      working_view.setContentsMargins(0, 0, 0, 12)
+      app_view.addLayout(working_view, 0, 2)
+
+      # Set the background color of the QGridLayout
+      self.code_editor = QTextEdit()
+      # self.code_editor.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
+      self.code_editor.setStyleSheet("background-color: #161618; color: #F8F8FF;")
+      # self.code_editor.setTabStopWidth(20)
+      # self.code_editor.setTabChangesFocus(True)
+      # self.code_editor.setAcceptRichText(False)
+      self.code_editor.setLineWrapMode(QTextEdit.NoWrap)
+      # self.code_editor.setAcceptDrops(False)
+      # self.code_editor.setUndoRedoEnabled(True)
+      # self.code_editor.setOverwriteMode(False)
+      # self.code_editor.setReadOnly(False)
+      # self.code_editor.setLineWrapColumnOrWidth(0)
+      # self.code_editor.setPlaceholderText("Code Editor")
+      self.code_editor.setFrameShape(QFrame.StyledPanel)
+      self.code_editor.setFrameShadow(QFrame.Plain)
+
+      # Stretch the code editor to fill the working view
+      self.code_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+      working_view.addWidget(self.code_editor, 0, 0)
 
    def keyPressEvent(self, event):
       #  if key is f4 or escape
-       if event.key() == Qt.Key_F4 or event.key() == Qt.Key_Escape:
-           self.close()
+      if event.key() == Qt.Key_F4 or event.key() == Qt.Key_Escape:
+         self.close()
 
 class WorkingProject():
    def __init__(self, root_dir) -> None:
