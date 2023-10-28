@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from QTECode import QCodeEditor
 
 class MyWindow(QWidget):
    def __init__(self):
@@ -15,6 +16,9 @@ class MyWindow(QWidget):
       p.setColor(self.backgroundRole(), QColor(0x121927))
       self.setPalette(p)
 
+      shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+      shortcut.activated.connect(self.saveAll)
+
       # Win View
       win_view = QVBoxLayout()
       win_view.setContentsMargins(0,0,0,0)
@@ -25,22 +29,22 @@ class MyWindow(QWidget):
       win_view.addWidget(grab_bar)
 
       # App View
-      app_view = QGridLayout()
-      app_view.setContentsMargins(0,0,0,0)
-      app_view.setSpacing(0)
-      app_view.setColumnStretch(0, 1)
-      app_view.setColumnStretch(1, 2)
-      app_view.setColumnStretch(2, 5)
-      win_view.addLayout(app_view)
+      self.app_view = QGridLayout()
+      self.app_view.setContentsMargins(0,0,0,0)
+      self.app_view.setSpacing(0)
+      self.app_view.setColumnStretch(0, 1)
+      self.app_view.setColumnStretch(1, 4)
+      # self.app_view.setColumnStretch(2, 5)
+      win_view.addLayout(self.app_view)
 
       # Project View
-      self.init_project_view(app_view)
+      self.init_project_view(self.app_view)
 
-      # AI View
-      self.init_ai_view(app_view)
+      # # AI View
+      # self.init_ai_view(app_view)
 
       # Working View
-      self.init_working_view(app_view)
+      self.init_working_view(self.app_view)
 
       self.setLayout(win_view)
 
@@ -72,11 +76,19 @@ class MyWindow(QWidget):
       self.tree.setColumnHidden(3, True)
       self.tree.setGeometry(QRect(4, 40, 640, 160))
 
-      self.tree.doubleClicked.connect(treeDoubleClick)
+      self.tree.clicked.connect(self.treeDoubleClick)
    
       self.tree.setWindowTitle("Dir View")
       self.tree.resize(640, 480)
       project_view.addWidget(self.tree)
+
+   def treeDoubleClick(self, index):
+      # print("treeDoubleClick", index)
+      file_path = win.file_system_model.filePath(index)
+
+      if win.file_system_model.isDir(index) == False:
+         if win.code_editor.openFile(file_path) == False:
+            print("Unrecognised file type, cannot open:", file_path)
 
    def init_ai_view(self, app_view):
       ai_view = QStackedLayout()
@@ -111,27 +123,10 @@ class MyWindow(QWidget):
    def init_working_view(self, app_view):
       working_view = QGridLayout()
       working_view.setContentsMargins(0, 0, 0, 12)
-      app_view.addLayout(working_view, 0, 2)
+      app_view.addLayout(working_view, 0, 1)
 
       # Set the background color of the QGridLayout
-      self.code_editor = QTextEdit()
-      # self.code_editor.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
-      self.code_editor.setStyleSheet("background-color: #161618; color: #F8F8FF;")
-      # self.code_editor.setTabStopWidth(20)
-      # self.code_editor.setTabChangesFocus(True)
-      # self.code_editor.setAcceptRichText(False)
-      self.code_editor.setLineWrapMode(QTextEdit.NoWrap)
-      # self.code_editor.setAcceptDrops(False)
-      # self.code_editor.setUndoRedoEnabled(True)
-      # self.code_editor.setOverwriteMode(False)
-      # self.code_editor.setReadOnly(False)
-      # self.code_editor.setLineWrapColumnOrWidth(0)
-      # self.code_editor.setPlaceholderText("Code Editor")
-      self.code_editor.setFrameShape(QFrame.StyledPanel)
-      self.code_editor.setFrameShadow(QFrame.Plain)
-
-      # Stretch the code editor to fill the working view
-      self.code_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+      self.code_editor = QCodeEditor()
 
       working_view.addWidget(self.code_editor, 0, 0)
 
@@ -139,6 +134,9 @@ class MyWindow(QWidget):
       #  if key is f4 or escape
       if event.key() == Qt.Key_F4 or event.key() == Qt.Key_Escape:
          self.close()
+
+   def saveAll(self):
+      print("Saving all files...")
 
 class WorkingProject():
    def __init__(self, root_dir) -> None:
@@ -167,19 +165,14 @@ def openProject(folder_path):
    folder_name = folder_path.split("/")[-1]
    win.project_button.setText(folder_name)
 
-def treeDoubleClick(index):
-   print("treeDoubleClick", index)
-   file_path = win.file_system_model.filePath(index)
-   print(file_path)
-
 # Global variables
 app = QApplication(sys.argv)
 win: MyWindow = MyWindow()
 project: WorkingProject = None
 
 # Debug
-# openProject("/home/rolly/proj/cass0")
-openProject("/home/rolly/proj/ammo")
+openProject("/home/rolly/proj/cass")
+# openProject("/home/rolly/proj/ammo")
 
 # Entry Point
 if __name__ == "__main__":
