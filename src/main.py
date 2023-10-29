@@ -171,8 +171,8 @@ win: MyWindow = MyWindow()
 project: WorkingProject = None
 
 # Debug
-openProject("/home/rolly/proj/cass")
-# openProject("/home/rolly/proj/ammo")
+# openProject("/home/rolly/proj/cass")
+openProject("/home/rolly/proj/ammo")
 
 # Entry Point
 if __name__ == "__main__":
