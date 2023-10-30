@@ -133,6 +133,7 @@ class MyWindow(QWidget):
    def keyPressEvent(self, event):
       #  if key is f4 or escape
       if event.key() == Qt.Key_F4 or event.key() == Qt.Key_Escape:
+         self.code_editor.endProcessThread()
          self.close()
 
    def saveAll(self):
