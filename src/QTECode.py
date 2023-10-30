@@ -102,119 +102,102 @@ class QCodeEditor(QTextEdit):
         print("Main    : before running thread")
         x.start()
         sleep(1)
+        
+        # Initialize message
+        init_msg = f"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {{\"processId\": {self.process.pid}, "\
+                    f"\"capabilities\": {{}}}}}}"
+        self.com = str(f"Content-Length: {len(init_msg) + 0}\r\n\r\n{init_msg}")
+        
         # print("sending stdin...")
         # msg = "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"textDocument/hover\", \"params\": {\"type\": 1, \"message\": \"int\"}}"
-        msg = "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {rootUri: '/home/rolly/proj/ammo', capabilities: {}, rootPath: '/home/rolly/proj/ammo/cli/src/game_screen.odin'\"}}"
-        self.com = str(f"Content-Length:{len(msg)}\r\n{msg}\r\n")
+        # msg = "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {rootUri: '/home/rolly/proj/ammo', capabilities: {}, rootPath: '/home/rolly/proj/ammo/cli/src/game_screen.odin'\"}}"
+        # self.com = str(f"Content-Length:{len(msg) + 0}\r\n\r\n{msg}")
         # self.process.stdin.write(com.encode())
         # self.process.stdin.flush()
         sleep(3)
         print("ols terminating")
+        # print("TODO process.terminate")
         self.process.terminate()
         print("ols terminated...")
         x.join()
         print("Main    : all done")
 
     def process_thread_fn(self):
-        # if os.path.exists("input_pipe") == False:
-        #     os.mkfifo("input_pipe", 448)
-        # if os.path.exists("output_pipe") == False:
-        #     os.mkfifo("output_pipe", 448)
-        # if os.path.exists("error_pipe") == False:
-        #     os.mkfifo("error_pipe", 448)
+        input_pipe_path = "/home/rolly/proj/cass/bin/input_pipe"
+        output_pipe_path = "/home/rolly/proj/cass/bin/output_pipe"
+        error_pipe_path = "/home/rolly/proj/cass/bin/error_pipe"
 
-        print("ols process thread begin...")
-        with io.open("input_pipe", "r+", encoding="utf-8") as input_pipe:
-            print("input_pipe open...")
+        if os.path.exists(input_pipe_path) == False:
+            os.mkfifo(input_pipe_path, 0o600)
+        if os.path.exists(output_pipe_path) == False:
+            os.mkfifo(output_pipe_path, 0o600)
+        if os.path.exists(error_pipe_path) == False:
+            os.mkfifo(error_pipe_path, 0o600)
 
-            # with open("output_pipe", "w") as output_pipe:
-            #     with open("error_pipe", "w") as error_pipe:
-            #         self.process = subprocess.Popen(["../ols/ols"], stdin=input_pipe, stdout=output_pipe, stderr=error_pipe,
-            #                                         shell=False, universal_newlines=True)
-                    
-            #         nbsrout = NonBlockingStreamReader(self.process.stdout)
-            #         print("ols begun...")
-                    
-            #         while True:
-            #             if self.process.poll() != None:
-            #                 print("ols process exited")
-            #                 break
-                        
-            #             if len(self.com) == 0:
-            #                 output = nbsrout.readline(0.5)
-            #                 if output != None:
-            #                     print('LS-UnOut:', output)
-            #                     continue
-            #                 sleep(1)
-            #                 continue
-                        
-            #             print("sending stdin:", self.com)
-            #             self.process.stdin.write(self.com)
-            #             self.process.stdin.flush()
-            #             self.com = ""
-
-
-        # while proc.returncode is None:
-        #     proc.poll()
-        # self.process = subprocess.Popen(["../ols/ols"], stdin=pin, stdout=pout, stderr=perr, shell=False, universal_newlines=True)
-
-
-        # nbsrout = NonBlockingStreamReader(self.process.stdout)
-        # nbsrerr = NonBlockingStreamReader(self.process.stderr)
-
-        # # get the output
-        # print("ols begun...")
-        # while True:
-        #     if self.process.poll() != None:
-        #         print("ols process exited")
-        #         break
-            
-        #     if len(self.com) == 0:
-        #     #     output = nbsrout.readline(0.5)
-        #     #     if output != None:
-        #     #         print('LS-UnOut:', output)
-        #     #         continue
-        #     #     output = nbsrerr.readline(0.2)
-        #     #     if output != None:
-        #     #         print('LS-UnErr:', output)
-        #     #         continue
-        #     #     print("ols stdout empty")
-        #         sleep(1)
-        #         continue
-            
-        #     print("sending stdin:", self.com)
-        #     self.process.stdin.write(self.com)
-        #     self.process.stdin.flush()
-
-        #     # reader = io.TextIOWrapper(self.process.stdout, encoding='utf8')
-        #     # char = reader.read(1)
-        #     # print("ols stdout:", char)
-        #     # soo, seo = self.process.communicate(input=self.com, timeout=1.3)
-        #     # print("ols stdout:", soo)
-        #     # print("ols stderr:", seo)
-
-        #     self.com = ""
-
-        #     # while True:
-        #     #     output = nbsr.readline(0.4)
-        #     #     if output == None:
-        #     #         print('LS-Out END')
-        #     #         break
-        #     #     print('LS-Out:', output)
+        print("pipes opening...")
         
-        # print("loop exited")
+        ip_fd = os.open("/home/rolly/proj/cass/bin/input_pipe", os.O_RDWR)
+        op_fd = os.open("/home/rolly/proj/cass/bin/output_pipe", os.O_RDWR | os.O_NONBLOCK)
+        ep_fd = os.open("/home/rolly/proj/cass/bin/error_pipe", os.O_RDWR | os.O_NONBLOCK)
+        sout = os.fdopen(op_fd)
+        serr = os.fdopen(ep_fd)
+        print("pipes opened...")
+        # ols_path = "../ols/ols"
+        ols_path = "/home/rolly/.config/Code/User/globalStorage/danielgavin.ols/122834134/ols-x86_64-unknown-linux-gnu"
+        self.process = subprocess.Popen([ols_path], stdin=ip_fd, stdout=op_fd, stderr=ep_fd, shell=False,
+                                        universal_newlines=True)
+        print("ols begun")
+        
+        while True:
+            if self.process.poll() != None:
+                # print("ols process exited")
+                break
+            
+            # DEBUG
+            # # with sin = os.fdopen(ip_fd):
+            # with os.fdopen(ip_fd) as sin:
+            #     outline = sin.readline()
+            #     while len(outline) > 0:
+            #         print("<--:", outline)
+            #         # TODO process output
+            #         outline = sin.readline()
+            # DEBUG
 
-        # # self.process.wait()
-        # while True:
-        # #     # sleep(1.2)
-        # #     # print("readable=",self.process.stdout.readable())
-        # #     line = self.process.stdout.readline()
-        # #     print("ols OUT:", self.process.stdout.read())
-        # #     if not line:
-        # #         break
-        # # print("ols terminating")
-        # # self.process.terminate()
-        # print("ols process thread end.")
+            outline = sout.readline()
+            while len(outline) > 0:
+                # TODO log output
+                print("-->:", outline)
+                # TODO process output
+                outline = sout.readline()
+
+            outline = serr.readline()
+            while len(outline) > 0:
+                # TODO log errors
+                print("err>", outline)
+                # TODO process errors
+                outline = serr.readline()
+
+            if len(self.com) == 0:
+                sleep(0.1)
+                continue
+            
+            # TODO log the input
+            wres = os.write(ip_fd, self.com.encode())
+            if wres <= 0:
+                break
+            self.com = ""
+
+        # Terminate the process and close the pipes
+        self.process.terminate()
+        os.close(ip_fd)
+        os.close(op_fd)
+        os.close(ep_fd)
+        print("process terminated & pipes closed...")
+
+        os.remove(input_pipe_path)
+        os.remove(output_pipe_path)
+        os.remove(error_pipe_path)
+        print("pipes removed...")
 
         # self.cursorPositionChanged.connect(self.highlightCurrentLine)
         # self.highlightCurrentLine()
