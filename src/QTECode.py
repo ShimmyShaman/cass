@@ -107,7 +107,7 @@ class QCodeEditor(QTextEdit):
         self.beginProcessThread()
 
     def beginProcessThread(self):
-        self.com = ""
+        self.com = Queue()
         print("Main    : before creating thread")
         self.process_thread = threading.Thread(target=self.processThreadFn, args=())
         self.process_thread.daemon = True
@@ -116,34 +116,28 @@ class QCodeEditor(QTextEdit):
         sleep(1)
         
         # Initialize message
-        # init_msg = f"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {{\"processId\": {self.process.pid}, "\
-        #             f"\"capabilities\": {{}}, \"workspaceFolders\": [{{\"uri\": \"file:///home/rolly/proj/ammo\", \"name\": \"ammo\"}}]}}}}"
-        # self.com = str(f"Content-Length: {len(init_msg) + 0}\r\n\r\n{init_msg}")
         self.lsp_msg_id = 1
         self.queued_ols_responses = dict()
-        self.queueOLSMessageResponse(self.lsp_msg_id, "initialized", {})
+
+        def initialize_reply(response: dict):
+            self.sendOLSMessage("initialized", {})
         self.sendOLSMessage("initialize", {"processId": self.ols.pid, "capabilities": {}, "workspaceFolders":
-                                       [{"uri": "file:///home/rolly/proj/ammo", "name": "ammo"}]})
+                                       [{"uri": "file:///home/rolly/proj/ammo", "name": "ammo"}]}, initialize_reply)
 
-        # print("sending stdin...")
-        # msg = "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"textDocument/hover\", \"params\": {\"type\": 1, \"message\": \"int\"}}"
-        # msg = "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {rootUri: '/home/rolly/proj/ammo', capabilities: {}, rootPath: '/home/rolly/proj/ammo/cli/src/game_screen.odin'\"}}"
-        # self.com = str(f"Content-Length:{len(msg) + 0}\r\n\r\n{msg}")
-        # sleep(3)
-        # # print("TODO process.terminate")
-        # self.process.terminate()
-        # print("ols terminated...")
-        # x.join()
-        # print("Main    : all done")
-
-    def sendOLSMessage(self, method: str, params: dict):
+    def sendOLSMessage(self, method: str, params: dict, response_callback: callable = None):
         msg = f"{{\"jsonrpc\": \"2.0\", \"id\": {self.lsp_msg_id}, \"method\": \"{method}\", \"params\": {params}}}"
         # print("sending stdin>", msg)
-        self.com = str(f"Content-Length: {len(msg) + 0}\r\n\r\n{msg}")
+        # self.com = str(f"Content-Length: {len(msg) + 0}\r\n\r\n{msg}")
+        if response_callback != None:
+            self.queued_ols_responses[self.lsp_msg_id] = response_callback
+
+        self.com.put(str(f"Content-Length: {len(msg) + 0}\r\n\r\n{msg}"))
         self.lsp_msg_id += 1
 
-    def queueOLSMessageResponse(self, msg_id: int, method: str, params: dict):
-        self.queued_ols_responses[msg_id] = {"method": method, "params": params}
+    # def queueOLSMessageResponse(self, msg_id: int, method: str, params: dict):
+    #     self.queued_ols_responses[msg_id] = {"method": method, "params": params}
+    
+    # def queueOLSCallbackResponse(self, msg_id: int, )
 
     def endProcessThread(self):
         print("ols terminating")
@@ -159,6 +153,7 @@ class QCodeEditor(QTextEdit):
         input_pipe_path = "/home/rolly/proj/cass/bin/input_pipe"
         output_pipe_path = "/home/rolly/proj/cass/bin/output_pipe"
         error_pipe_path = "/home/rolly/proj/cass/bin/error_pipe"
+        ols_log_path = "/home/rolly/proj/cass/bin/ols.log"
 
         if os.path.exists(input_pipe_path) == False:
             os.mkfifo(input_pipe_path, 0o600)
@@ -174,6 +169,7 @@ class QCodeEditor(QTextEdit):
         ep_fd = os.open("/home/rolly/proj/cass/bin/error_pipe", os.O_RDWR | os.O_NONBLOCK)
         sout = os.fdopen(op_fd)
         serr = os.fdopen(ep_fd)
+        ols_log = io.open(ols_log_path, "w+")
         print("pipes opened...")
         # ols_path = "../ols/ols"
         ols_path = "/home/rolly/.config/Code/User/globalStorage/danielgavin.ols/122834134/ols-x86_64-unknown-linux-gnu"
@@ -198,31 +194,48 @@ class QCodeEditor(QTextEdit):
 
             outline = sout.readline()
             while len(outline) > 0:
-                # TODO log output
-                print("-->:", outline, end="")
+                ols_log.write(f"<--{outline}\r\n")
+                ols_log.flush()
+                # print("-->:", outline, end="")
 
                 # Ensure the output is a Content-Length header
                 if outline.startswith("Content-Length:"):
                     # Read the next line
+                    content_length = int(outline.split(":")[1].strip())
                     outline = sout.readline()
                     # Ensure the output is a newline
                     if outline == "\n":
                         # Read the next line
-                        outline = sout.readline()
+                        outline = sout.readline(content_length)
                         # Ensure the output is a JSON message
                         if outline.startswith("{"):
                             # print("-->:", outline)
-                            print("here3")
-                            sleep(1.1)
                             # outline2 = sout.readline()
                             # print("-2>:", outline2)
-                            ols_result = decoder.JSONDecoder().decode(outline)
-                            print("-->", ols_result)
+                            ols_log.write(f"<--{outline}\r\n")
+                            ols_log.flush()
 
-                            if ols_result.get("id") != None:
-                                queued_response = self.queued_ols_responses.pop(ols_result["id"], None)
-                                if queued_response != None:
-                                    self.sendOLSMessage(queued_response["method"], queued_response["params"])
+                            ols_result: dict = None
+                            try:
+                                ols_result = decoder.JSONDecoder().decode(outline)
+                            except decoder.JSONDecodeError as jde:
+                                print(f"JSONDecodeError: {jde}\r\nFrom <--:`{outline}`\r\n")
+                                ols_log.write(f"JSONDecodeError: {jde}\r\n")
+                                ols_log.flush()
+
+                            if ols_result != None:
+                                # print("<--", ols_result)
+
+                                if ols_result.get("id") != None:
+                                    # print("here")
+                                    queued_response = self.queued_ols_responses.pop(ols_result["id"], None)
+                                    if queued_response != None:
+                                        ols_log.write(f"!Invoking Queued OLS Response:{queued_response}\r\n")
+                                        ols_log.flush()
+                                        queued_response(ols_result)
+                                        # print("here2")
+                                        # self.sendOLSMessage(queued_response["method"], queued_response["params"])
+                                        # print("here3")
 
                             # Continue reading STDOUT
                             outline = sout.readline()
@@ -247,21 +260,32 @@ class QCodeEditor(QTextEdit):
                 # TODO process errors
                 outline = serr.readline()
 
-            if len(self.com) == 0:
-                sleep(0.1)
+            if self.com.qsize() > 0:
+                # print("self.com.qsize():", self.com.qsize())
+                msg = self.com.get()
+                # print("-->", msg)
+                # TODO log the input
+                ols_log.write(f"-->{msg}\r\n")
+                ols_log.flush()
+                wres = os.write(ip_fd, msg.encode())
+                if wres <= 0:
+                    print("STDIN write error")
+                    break
                 continue
             
-            # TODO log the input
-            wres = os.write(ip_fd, self.com.encode())
-            if wres <= 0:
-                break
-            self.com = ""
+            sleep(0.05)
 
         # Terminate the process and close the pipes
         self.ols.terminate()
+
+        sout.close()
+        serr.close()
+        ols_log.close()
+
         os.close(ip_fd)
         os.close(op_fd)
         os.close(ep_fd)
+        os.close(ols_log)
 
         os.remove(input_pipe_path)
         os.remove(output_pipe_path)
@@ -270,25 +294,19 @@ class QCodeEditor(QTextEdit):
 
         print("process terminated & pipes closed...")
 
-    # class JsonMsg:
-    #     self.jsonRpcVersion = ""
-    #     self.id = 0
-    #     self.result = dict()
-
-
-    # def parseJsonMessage(self, json_msg: str):
-    #     print("jm[id]=", jm["id"])
-    #     print("jm[result]=", jm["result"])
-
+    def processDocumentSymbols(self, response: dict):
+        print("processDocumentSymbols:", response)
 
     def openFile(self, file_path: str):
         if file_path.endswith(".odin"):
+            # Open the file
             print("Opening file", file_path)
             file = open(file_path, "r")
             file_content = file.read()
             self.setText(file_content)
             file.close()
 
+            # Ensure an open-document exists for the file
             new_document = self.openDocuments.get(file_path)
             if new_document == None:
                 new_document = QCodeDocument()
@@ -298,13 +316,20 @@ class QCodeEditor(QTextEdit):
                 new_document.file_modified = False
                 new_document.file_saved = True
                 new_document.file_content = file_content
+            self.focusedDocument = new_document
             
+            # Inform the LSP that the document has been opened
             if new_document.file_opened == False:
                 new_document.file_opened = True
-                self.sendOLSMessage("textDocument/didOpen", {"textDocument": {"uri": f"file://{new_document.file_path}",
-                                                                              "languageId": "odin",
-                                                                              "version": 1,
-                                                                              "text": new_document.file_content}})
+                self.sendOLSMessage("textDocument/didOpen",
+                                    {"textDocument": {"uri": f"file://{new_document.file_path}",
+                                                      "languageId": "odin",
+                                                      "version": 1,
+                                                      "text": new_document.file_content}})
+                self.sendOLSMessage("textDocument/documentSymbol",
+                                    {"textDocument": {"uri": f"file://{self.focusedDocument.file_path}"}},
+                                    self.processDocumentSymbols)
+                
             return True
         if file_path.endswith(".py"):
             print("Opening file", file_path)
