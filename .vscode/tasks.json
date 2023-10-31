@@ -5,12 +5,21 @@
   "tasks": [
     // ######## Build ######## //
     {
-      "label": "compile",
+      "label": "py-run",
+      "type": "shell",
+      "command": "python3 ./src/main.py",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "odin-run",
       "type": "shell",
       "command": "./compile.sh",
       "group": {
         "kind": "build",
-        "isDefault": true
+        "isDefault": false
       }
     },
     {

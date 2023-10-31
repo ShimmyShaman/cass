@@ -48,9 +48,6 @@ CassAppData :: struct {
   alt_err: CassAppError,
   alt_state: AlternateThreadState,
   alt_sync: sync.Mutex,
-  // alt_data: union {
-  //   ExistingFileSearch,
-  // },
 
   vctx: ^vi.Context,
   gui: ^vig.GUIRoot,
@@ -69,12 +66,6 @@ CassAppData :: struct {
 }
 
 main :: proc() {
-
-  // TODO -- debug convenience delay
-  // time.sleep(time.Second * 1)
-
-  // fmt.println("here...")
-
   lerr := _begin_game_loop()
   if lerr != .Success {
     if lerr < auto_cast vi.Error.MAX_EXTENT_VALUE {
@@ -99,13 +90,13 @@ _initialize_app_data :: proc() -> (cad: ^CassAppData, err: CassAppError) {
 
   // Initialize Renderer
   verr: vi.Error
-  cad.vctx, verr = vi.init(1340, 720) // TODO -- find a more elegant way to package and make available violins resources(shaders)
+  cad.vctx, verr = vi.init(1700, 740) // TODO -- find a more elegant way to package and make available violins resources(shaders)
   if verr != .Success {
     fmt.println("init problem:", verr)
     err = auto_cast verr
     return
   }
-  // sdl2.SetWindowBordered(cad.vctx.window, false)
+  sdl2.SetWindowBordered(cad.vctx.window, false)
 
   return
 }
@@ -121,11 +112,7 @@ _begin_game_loop :: proc() -> CassAppError {
 
   // Temp Load Resources
   // // RenderPasses
-  // rpass3d, rpass2d: vi.RenderPassResourceHandle
-  // rpass3d, verr = vi.create_render_pass(cad.vctx, { .HasDepthBuffer })
-  // if verr != .Success do return auto_cast verr
-  // defer vi.destroy_resource(cad.vctx, rpass3d)
-
+  // rpass2d: vi.RenderPassResourceHandle
   // // rpass2d, err = vi.create_render_pass(cad.vctx, { })
   // // if err != .Success {
   // //   fmt.println("create_render_pass 2 error")
@@ -167,16 +154,6 @@ _begin_game_loop :: proc() -> CassAppError {
   // //   fmt.println("load_textured_rect error")
   // //   return .NotYetDetailed
   // // }
-  
-  // // rd3: vi.RenderData
-  // // rp3: vi.RenderProgram
-  // // rd3, rp3, err = load_cube(cad.vctx, rpass3d)
-  // // defer vi.destroy_render_program(cad.vctx, &rp3)
-  // // defer vi.destroy_render_data(cad.vctx, &rd3)
-  // // if err != .Success {
-  // //   fmt.println("load_cube error")
-  // //   return .NotYetDetailed
-  // // }
 
   // Variables
   ft: vi.FrameTime
@@ -200,23 +177,6 @@ _begin_game_loop :: proc() -> CassAppError {
     // --- ### Draw the Frame ### ---
     // fmt.println("hereA")
     if rctx, verr = vi.begin_present(cad.vctx); verr != .Success do return .NotYetDetailed
-
-    // 3D
-    // if vi.begin_render_pass(rctx, rpass3d) != .Success do break loop
-
-    // // Create ViewProj Matrix
-    // eye := la.vec3{6.0 * sdl2.cosf(total_elapsed), 5 + sdl2.cosf(total_elapsed * 0.6) * 3.0, 6.0 * sdl2.sinf(total_elapsed)}
-    // // sqd: f32 = 8.0 / la.length_vec2(la.vec2{eyevent.x, eyevent.z})
-    // // eyevent.x *= sqd
-    // // eyevent.z *= sqd
-    // // eye := la.vec3{-3.0, 0, 0}
-    // view := la.mat4LookAt(eye, la.vec3{0, 0, 0}, la.vec3{0, -1, 0})
-    // proj := la.mat4Perspective(0.7, cast(f32)ctx.swap_chain.extent.width / cast(f32)ctx.swap_chain.extent.height, 0.1, 100)
-    // vp := proj * view
-    // // vp := view * proj
-    // vi.write_to_buffer(ctx, pvp, &vp, size_of(la.mat4))
-
-    // if vi.draw_indexed(rctx, &rp3, &rd3) != .Success do return
 
     // // 2D
     // if vi.begin_render_pass(rctx, rpass2d) != .Success do break loop    
