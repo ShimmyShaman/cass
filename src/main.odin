@@ -121,6 +121,8 @@ _begin_game_loop :: proc() -> CassAppError {
   // // }
   // // defer vi.destroy_resource(cad.vctx, rpass2d)
   
+  cad.vctx.default_clear_color = vi.Color { 0.45, 0.46, 0.49, 1.0 }
+
   // // Resources
   stamp_shaders: ^vi.StampShaders
   stamp_shaders, verr = vi.load_stamp_shaders("../dep/violin/spirv")
@@ -247,8 +249,8 @@ _initialize_app_data_gui :: proc(using cad: ^CassAppData) -> (err: CassAppError)
   panel: ^vig.StackContainer
   if panel, verr = vig.create_stack_container(auto_cast cad.gui); verr != .Success do return auto_cast verr
 
-  panel.background_color = vi.COLOR_DarkOrange
-  panel.margin = {2, 40, 2, 2}
+  panel.background_color = vi.Color { 0.1, 0.13, 0.11, 1.0 }
+  panel.margin = {2, 24, 2, 2}
   
   return
 }

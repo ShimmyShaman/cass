@@ -18,8 +18,8 @@
       "type": "shell",
       "command": "./compile.sh",
       "group": {
-        "kind": "build",
-        "isDefault": false
+        "kind": "test",
+        "isDefault": true
       }
     },
     {
