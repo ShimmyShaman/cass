@@ -61,5 +61,8 @@ cli/deps
 **.jpeg
 **.png
 
+# Cache
+pysrc/__pycache__**
+
 # OpenAI_API_Key
 OpenAI_API_Key.txt

@@ -14,43 +14,6 @@ from queue import Queue, Empty
 
 from json import decoder
 
-class NonBlockingStreamReader:
-    def __init__(self, stream):
-        '''
-        stream: the stream to read from.
-                Usually a process' stdout or stderr.
-        '''
-
-        self._s = stream
-        self._q = Queue()
-
-        def _populateQueue(stream, queue):
-            '''
-            Collect lines from 'stream' and put them in 'quque'.
-            '''
-
-            while True:
-                line = stream.readline()
-                if line:
-                    queue.put(line)
-                else:
-                    raise UnexpectedEndOfStream
-
-        self._t = Thread(target = _populateQueue,
-                args = (self._s, self._q))
-        self._t.daemon = True
-        self._t.start() #start collecting lines from the stream
-
-    def readline(self, timeout = None):
-        try:
-            return self._q.get(block = timeout is not None,
-                    timeout = timeout)
-        except Empty:
-            return None
-
-class UnexpectedEndOfStream(Exception):
-    pass
-
 class QCodeDocument:
     def __init__(self):
         self.file_path = ""
@@ -101,10 +64,17 @@ class QCodeEditor(QTextEdit):
         #     }
         # """)
 
+        self.textChanged.connect(self.onTextChanged)
         self.openDocuments = dict()
         
         # process
         self.beginProcessThread()
+
+    def onTextChanged(self):
+        print("onTextChanged")
+        if self.focusedDocument != None:
+            self.focusedDocument.file_modified = True
+            self.focusedDocument.file_saved = False
 
     def beginProcessThread(self):
         self.com = Queue()
@@ -282,10 +252,10 @@ class QCodeEditor(QTextEdit):
         serr.close()
         ols_log.close()
 
-        os.close(ip_fd)
-        os.close(op_fd)
-        os.close(ep_fd)
-        os.close(ols_log)
+        # os.close(ip_fd)
+        # os.close(op_fd)
+        # os.close(ep_fd)
+        # os.close(ols_log)
 
         os.remove(input_pipe_path)
         os.remove(output_pipe_path)
@@ -339,3 +309,13 @@ class QCodeEditor(QTextEdit):
             file.close()
             return True
         return False
+
+    def saveAllModifiedFiles(self):
+        for document in self.openDocuments.values():
+            if document.file_modified == True:
+                document.file_modified = False
+                with open(document.file_path, "w") as writer:
+                    writer.write(document.file_content)
+                document.file_saved = True
+                self.sendOLSMessage("textDocument/didSave",
+                                    {"textDocument": {"uri": f"file://{document.file_path}"}})

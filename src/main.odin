@@ -91,6 +91,7 @@ _initialize_app_data :: proc() -> (cad: ^CassAppData, err: CassAppError) {
   // Initialize Renderer
   verr: vi.Error
   cad.vctx, verr = vi.init(1700, 740) // TODO -- find a more elegant way to package and make available violins resources(shaders)
+  // TODO vi.init window_bordered=false seems broke
   if verr != .Success {
     fmt.println("init problem:", verr)
     err = auto_cast verr
@@ -185,23 +186,23 @@ _begin_game_loop :: proc() -> CassAppError {
 
     if vi.stamp_begin(rctx, stamprr) != .Success do return .NotYetDetailed
 
-    sq := vi.Rectf{100, 100, 300, 200}
-    co := vi.COLOR_Blue
-    if vi.stamp_colored_rect(rctx, stamprr, &sq, &co) != .Success do return .NotYetDetailed
-    sq = vi.Rectf{200, 200, 100, 300}
-    co = vi.COLOR_Chocolate
-    if vi.stamp_colored_rect(rctx, stamprr, &sq, &co) != .Success do return .NotYetDetailed
-    // sq = vi.Rectf{280, 60, 420, 210}
-    // co = vi.Color { 1.0, 0.0, 0.0, 0.7 }
-    // if vi.stamp_textured_rect(rctx, stamprr, parth, &sq, &co) != .Success do return .NotYetDetailed
+    // sq := vi.Rectf{100, 100, 300, 200}
+    // co := vi.COLOR_Blue
+    // if vi.stamp_colored_rect(rctx, stamprr, &sq, &co) != .Success do return .NotYetDetailed
+    // sq = vi.Rectf{200, 200, 100, 300}
+    // co = vi.COLOR_Chocolate
+    // if vi.stamp_colored_rect(rctx, stamprr, &sq, &co) != .Success do return .NotYetDetailed
+    // // sq = vi.Rectf{280, 60, 420, 210}
+    // // co = vi.Color { 1.0, 0.0, 0.0, 0.7 }
+    // // if vi.stamp_textured_rect(rctx, stamprr, parth, &sq, &co) != .Success do return .NotYetDetailed
 
-    // sq = vi.Rectf{40, 272, 256, 256}
-    // co = vi.COLOR_Mint
-    // fontr: rawptr
-    // fontr, verr = vi.load_font(ctx)
-    // if verr != .Success do return auto_cast verr
-    // if vi.stamp_textured_rect(rctx, stamprr, (cast(^vi.Font)fontr).texture, &sq, &co) != .Success do return .NotYetDetailed
-    // vi.stamp_text(rctx, stamprr, font, "Hello World", 300, 400, auto_cast &co)
+    // // sq = vi.Rectf{40, 272, 256, 256}
+    // // co = vi.COLOR_Mint
+    // // fontr: rawptr
+    // // fontr, verr = vi.load_font(ctx)
+    // // if verr != .Success do return auto_cast verr
+    // // if vi.stamp_textured_rect(rctx, stamprr, (cast(^vi.Font)fontr).texture, &sq, &co) != .Success do return .NotYetDetailed
+    // // vi.stamp_text(rctx, stamprr, font, "Hello World", 300, 400, auto_cast &co)
 
     if vig.render_gui(rctx, stamprr, cad.gui) != .Success do return .NotYetDetailed
 
@@ -211,19 +212,6 @@ _begin_game_loop :: proc() -> CassAppError {
     }
 
     // Auto-Leave
-    // -- Space per frame
-    // for  {
-    //   event: sdl2.Event
-    //   sdl2.PollEvent(&event);
-    //   if event.type == .KEYDOWN {
-    //     if event.key.keysym.sym == .ESCAPE || event.key.keysym.sym == .F4 {
-    //       break loop
-    //     }
-    //     if event.key.keysym.sym == .SPACE {
-    //       break
-    //     }
-    //   }
-    // }
     // -- Fixed Frame Count
     // if recent_frame_count > 0 do break
     // break
@@ -239,16 +227,6 @@ _begin_game_loop :: proc() -> CassAppError {
     cast(f32) ft.historical_frame_count / cast(f32) time.diff(ft.init_time, time.now()) /
     cast(f32) time.Second, ")")
 
-  // if mod += 1; mod % 10 == 3 {
-  //   fmt.println("fps:", _recent_frame_count)
-  //   // break loop
-  // }
-  
-  // avg_fps := cast(int) (cast(f64)(ft.historical_frame_count + ft.recent_frame_count) / time.duration_seconds(
-  //   time.diff(ft.init_time, ft.now)))
-  // fmt.println("FrameCount:", ft.historical_frame_count + ft.recent_frame_count, " ( max:", ft.max_fps, "  min:",
-  //   ft.min_fps, " avg:", avg_fps, ")")
-
   return .Success
 }
 
@@ -258,23 +236,20 @@ _initialize_app_data_gui :: proc(using cad: ^CassAppData) -> (err: CassAppError)
   cad.gui, verr = vig.create_gui_root(cad.vctx, "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf", 25)
   if verr != .Success do return auto_cast verr // cad.vctx, stamprr, font
 
-  // Label
-  label: ^vig.Label
-  if label, verr = vig.create_label(auto_cast cad.gui); verr != .Success do return auto_cast verr
+  // // Label
+  // label: ^vig.Label
+  // if label, verr = vig.create_label(auto_cast cad.gui); verr != .Success do return auto_cast verr
   
-  label.background_color = vi.COLOR_DarkGray
-  label.text = "Hello World"
+  // label.background_color = vi.COLOR_DarkGray
+  // label.text = "Hello World"
 
   // Create a panel
   panel: ^vig.StackContainer
   if panel, verr = vig.create_stack_container(auto_cast cad.gui); verr != .Success do return auto_cast verr
 
-  panel.background_color = vi.COLOR_DarkSlateGray
-  panel.margin = {200, 80, 16, 40}
-
-  // button: ^vig.Button
-  // button, err= vig.create_button(auto_cast gui)
-
+  panel.background_color = vi.COLOR_DarkOrange
+  panel.margin = {2, 40, 2, 2}
+  
   return
 }
 

@@ -137,7 +137,7 @@ class MyWindow(QWidget):
          self.close()
 
    def saveAll(self):
-      print("Saving all files...")
+      self.code_editor.saveAllModifiedFiles()
 
 class WorkingProject():
    def __init__(self, root_dir) -> None:
@@ -172,8 +172,8 @@ win: MyWindow = MyWindow()
 project: WorkingProject = None
 
 # Debug
-# openProject("/home/rolly/proj/cass")
-openProject("/home/rolly/proj/ammo")
+openProject("/home/rolly/proj/cass")
+# openProject("/home/rolly/proj/ammo")
 
 # Entry Point
 if __name__ == "__main__":
