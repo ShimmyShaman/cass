@@ -18,9 +18,23 @@ class QCodeDocument:
     def __init__(self):
         self.file_path = ""
         self.file_content = ""
+        self.edit_version = 0
         self.file_modified = False
         self.file_opened = False
         self.file_saved = False
+
+class Position():
+    def __init__(self, line: int, character: int) -> None:
+        self.line = line
+        self.character = character
+# class Range():
+#     def __init__(self, start: Position, end: Position) -> None:
+#         self.start = start
+#         self.end = end
+# class TextDocumentChangeEvent():
+#     def __init__(self, range: Range, range_length: int) -> None:
+#         self.range = range
+#         self.range_length = range_length
 
 class QCodeEditor(QTextEdit):
     def __init__(self):
@@ -29,10 +43,12 @@ class QCodeEditor(QTextEdit):
         self.setStyleSheet("background-color: #161618; color: #F8F8FF;")
         # self.setTabStopWidth(20)
         # self.setTabChangesFocus(True)
-        # self.setAcceptRichText(False)
+        self.setAcceptRichText(False)
         self.setLineWrapMode(QTextEdit.NoWrap)
         # self.setAcceptDrops(False)
-        # self.setUndoRedoEnabled(True)
+        self.setUndoRedoEnabled(True)
+        # self.setLineWrapMode(QTextEdit.NoWrap)
+        # self.setWordWrapMode(QTextOption.NoWrap)
         # self.setOverwriteMode(False)
         # self.setReadOnly(False)
         # self.setLineWrapColumnOrWidth(0)
@@ -42,12 +58,6 @@ class QCodeEditor(QTextEdit):
 
         # Stretch the code editor to fill the working view
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.setAcceptRichText(False)
-        # self.setTabStopWidth(20)
-        # self.setLineWrapMode(QTextEdit.NoWrap)
-        # self.setWordWrapMode(QTextOption.NoWrap)
-        # self.setUndoRedoEnabled(True)
-        # self.setAcceptDrops(True)
 
         # # Set the background color to 
         # p = self.palette()
@@ -71,10 +81,78 @@ class QCodeEditor(QTextEdit):
         self.beginProcessThread()
 
     def onTextChanged(self):
-        print("onTextChanged")
         if self.focusedDocument != None:
+            # Find the changed text
+            new_text = self.toPlainText()
+
+            # Find the changed range
+            start: Position = Position(0, 0)
+            end: Position = Position(0, 0)
+            fc_len = len(self.focusedDocument.file_content)
+            nt_len = len(new_text)
+
+            # Start
+            f = 0
+            ns = 0
+            while f < fc_len and ns < nt_len:
+                if self.focusedDocument.file_content[f] == new_text[ns]:
+                    if self.focusedDocument.file_content[f] == "\n":
+                        start.line += 1
+                        start.character = 0
+                    else:
+                        start.character += 1
+
+                    f += 1
+                    ns += 1
+                    continue
+                else:
+                    break
+
+            if f == fc_len and ns == nt_len:
+                return
+            
+            # End
+            f_eq = fc_len - 1
+            ne_eq = nt_len - 1
+            while f >= 0 and ne_eq >= 0:
+                if self.focusedDocument.file_content[f_eq] != new_text[ne_eq]:
+                    break
+                f_eq -= 1
+                ne_eq -= 1
+            f_eq += 1
+            ne_eq += 1
+            # print(f"{self.focusedDocument.file_content[f]=}")
+
+            end.line = start.line
+            end.character = start.character
+            ei = f
+            while ei < f_eq:
+                if self.focusedDocument.file_content[ei] == "\n":
+                    end.line += 1
+                    end.character = 0
+                else:
+                    end.character += 1
+                ei += 1
+
+            # print(f"{f=}, {ns=}, {ei=}, {f_eq=}, {ne_eq=}")
+        
+            # Find the changed text
+            ne: int = ne_eq
+            changed_text: str = new_text[ns:ns + (ne_eq - min(f_eq, ns))]
+            
+            print(f"start:{start.line}:{start.character} end:{end.line}:{end.character} new:{ns}->{ne}='{changed_text}'")
+
             self.focusedDocument.file_modified = True
             self.focusedDocument.file_saved = False
+            self.focusedDocument.file_content = new_text
+            self.focusedDocument.edit_version += 1
+            self.sendOLSMessage(f"textDocument/didChange", {"textDocument": {"uri": f"file://{self.focusedDocument.file_path}",
+                                                                            "version": self.focusedDocument.edit_version},
+                                                           "contentChanges": [{"range": {"start": {"line": start.line,
+                                                                                                   "character": start.character},
+                                                                                         "end": {"line": end.line,
+                                                                                                 "character": end.character}},
+                                                                               "text": changed_text}]})
 
     def beginProcessThread(self):
         self.com = Queue()
@@ -106,7 +184,7 @@ class QCodeEditor(QTextEdit):
 
     # def queueOLSMessageResponse(self, msg_id: int, method: str, params: dict):
     #     self.queued_ols_responses[msg_id] = {"method": method, "params": params}
-    
+
     # def queueOLSCallbackResponse(self, msg_id: int, )
 
     def endProcessThread(self):
@@ -286,6 +364,7 @@ class QCodeEditor(QTextEdit):
                 new_document.file_modified = False
                 new_document.file_saved = True
                 new_document.file_content = file_content
+                new_document.edit_version = 1
             self.focusedDocument = new_document
             
             # Inform the LSP that the document has been opened
@@ -311,11 +390,17 @@ class QCodeEditor(QTextEdit):
         return False
 
     def saveAllModifiedFiles(self):
+        save_count = 0
         for document in self.openDocuments.values():
             if document.file_modified == True:
+                save_count += 1
                 document.file_modified = False
                 with open(document.file_path, "w") as writer:
                     writer.write(document.file_content)
+                    writer.flush()
+                    print("wrote to file:", document.file_path)
                 document.file_saved = True
                 self.sendOLSMessage("textDocument/didSave",
                                     {"textDocument": {"uri": f"file://{document.file_path}"}})
+                
+        print(f"saved {save_count} files")

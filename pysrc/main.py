@@ -16,9 +16,6 @@ class MyWindow(QWidget):
       p.setColor(self.backgroundRole(), QColor(0x121927))
       self.setPalette(p)
 
-      shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
-      shortcut.activated.connect(self.saveAll)
-
       # Win View
       win_view = QVBoxLayout()
       win_view.setContentsMargins(0,0,0,0)
@@ -135,9 +132,9 @@ class MyWindow(QWidget):
       if event.key() == Qt.Key_F4 or event.key() == Qt.Key_Escape:
          self.code_editor.endProcessThread()
          self.close()
-
-   def saveAll(self):
-      self.code_editor.saveAllModifiedFiles()
+      if event.modifiers() == Qt.ControlModifier:
+         if event.key() == Qt.Key_S:
+            self.code_editor.saveAllModifiedFiles()
 
 class WorkingProject():
    def __init__(self, root_dir) -> None:
