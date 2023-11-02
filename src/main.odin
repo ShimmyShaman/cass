@@ -30,7 +30,7 @@ CassAppError :: enum {
   FailedToReadDirectoryFile,
 }
 
-CassState :: enum {
+CassStateType :: enum {
   Initializing,
   ConnectingToServer,
   RetrievingServiceInfo,
