@@ -163,7 +163,7 @@ class QCodeEditor(QTextEdit):
                 ne_eq -= 1
             f_eq += 1
             ne_eq += 1
-            print(f"{f=} {self.focused_document.file_content[f]=}")
+            # print(f"{f=} {self.focused_document.file_content[f]=}")
 
             end.line = start.line
             end.character = start.character

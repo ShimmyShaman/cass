@@ -1,7 +1,5 @@
 package cass
 
-hubert
-
 import "core:c/libc"
 import "core:crypto/md5"
 import "core:fmt"
@@ -61,10 +59,12 @@ CassAppData :: struct {
   min_fps, max_fps: int,
   historical_frame_count: int,
 
-  state: CassState,
+  state: CassStateType,
   state_sync: sync.Mutex,
   state_transition_time: time.Time,
   state_retry_count: int,
+
+  source_editor: ^SourceEditor,
 }
 
 main :: proc() {
@@ -249,10 +249,15 @@ _initialize_app_data_gui :: proc(using cad: ^CassAppData) -> (err: CassAppError)
 
   // Create a panel
   panel: ^vig.StackContainer
-  if panel, verr = vig.create_stack_container(auto_cast cad.gui); verr != .Success do return auto_cast verr
+  panel, verr = vig.create_stack_container(auto_cast cad.gui);
+  if verr != .Success do return auto_cast verr
 
   panel.background_color = vi.Color { 0.1, 0.13, 0.11, 1.0 }
   panel.margin = {2, 24, 2, 2}
+
+  // Source Editor
+  cad.source_editor, verr = create_source_editor(auto_cast panel);
+  if verr != .Success do return auto_cast verr
   
   return
 }

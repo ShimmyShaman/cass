@@ -2,7 +2,11 @@
     "collections": [
         {
             "name": "core",
-            "path": "/home/rolly/core"
+            "path": "/home/rolly/proj/Odin/core"
+        },
+        {
+            "name": "vendor",
+            "path": "/home/rolly/proj/Odin/vendor"
         },
         {
             "name": "violin",

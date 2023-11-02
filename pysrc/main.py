@@ -9,7 +9,7 @@ class MyWindow(QWidget):
       super().__init__()
       self.setGeometry(140,180,1700,740)
       self.setWindowTitle("cass")
-      self.setWindowFlag(Qt.FramelessWindowHint)
+      # self.setWindowFlag(Qt.FramelessWindowHint)
 
       # Set the background color to 
       p = self.palette()
@@ -23,6 +23,7 @@ class MyWindow(QWidget):
       grab_bar = QLabel()
       grab_bar.setFixedHeight(18)
       grab_bar.setStyleSheet("background-color: #1e2a5a;")
+      # grab_bar.mousePressEvent.connect(self.grabBarMousePressEvent)
       win_view.addWidget(grab_bar)
 
       # App View
@@ -44,6 +45,13 @@ class MyWindow(QWidget):
       self.init_working_view(self.app_view)
 
       self.setLayout(win_view)
+
+   # def grabBarMousePressEvent(self, event):
+   #    if event.button() == Qt.LeftButton:
+   #       self.grab_offset = event.pos()
+   #       self.grab_offset.setY(self.grab_offset.y() + 18)
+   #       # print("grab_offset", self.grab_offset)
+   #       self.setGeometry(1700,740)
 
    def init_project_view(self, app_view):
       project_view = QVBoxLayout()
