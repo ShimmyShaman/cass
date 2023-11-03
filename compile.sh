@@ -12,7 +12,7 @@ fi
 #     echo "Usage: compile.sh <collection_dir> <bin_dir>"
 #     exit 1
 # fi
-COLDIR=dep # Collection Directory
+# COLDIR=dep # Collection Directory
 BINDIR=bin # Binary Directory
 EXE=cass
 
@@ -37,7 +37,7 @@ echo "########################################"
 # /home/rolly/proj/Odin/vendor/stb/lib/stb_image.a
 # $ODIN run ./src/kgs -debug -out:$EXE
 
-$ODIN build ./src -extra-linker-flags:"-lstdc++ -lvulkan" -collection:violin=$COLDIR/violin \
+$ODIN build ./src -extra-linker-flags:"-lstdc++ -lvulkan" -collection:violin=violin \
     -debug -out:$BINDIR/$EXE
 
 retval=$?

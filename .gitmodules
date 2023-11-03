@@ -1,3 +1,3 @@
-[submodule "dep/violin"]
-	path = dep/violin
-	url = https://ShimmyShaman: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@github.com/ShimmyShaman/violin.git
+[submodule "violin"]
+	path = violin
+	url = https://github.com/ShimmyShaman/violin.git

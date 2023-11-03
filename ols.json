@@ -10,11 +10,16 @@
         },
         {
             "name": "violin",
-            "path": "dep/violin"
+            "path": "./violin"
         }
     ],
-    "enable_document_symbols": true,
-    "enable_semantic_tokens": true,
     "enable_hover": true,
-    "enable_snippets": true
+    "enable_snippets": true,
+    "enable_semantic_tokens": true,
+    "enable_document_symbols": true,
+    "enable_fake_methods": true,
+    "enable_inlay_hints": true,
+    "odin_command": "/home/rolly/proj/Odin/odin",
+    "checker_args": ["-vet", "all"],
+    "verbose": false
 }

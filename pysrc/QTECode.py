@@ -195,6 +195,16 @@ class QCodeEditor(QTextEdit):
                                                                                                  "character": end.character}},
                                                                                "text": changed_text}]})
 
+    def sendOLSMessage(self, method: str, params: dict, response_callback: callable = None):
+        msg = f"{{\"jsonrpc\": \"2.0\", \"id\": {self.lsp_msg_id}, \"method\": \"{method}\", \"params\": {params}}}"
+        # print("sending stdin>", msg)
+        # self.com = str(f"Content-Length: {len(msg) + 0}\r\n\r\n{msg}")
+        if response_callback != None:
+            self.queued_ols_responses[self.lsp_msg_id] = response_callback
+
+        self.com.put(str(f"Content-Length: {len(msg) + 0}\r\n\r\n{msg}"))
+        self.lsp_msg_id += 1
+
     def beginProcessThread(self):
         self.com = Queue()
         print("Main    : before creating thread")
@@ -212,21 +222,6 @@ class QCodeEditor(QTextEdit):
             self.sendOLSMessage("initialized", {})
         self.sendOLSMessage("initialize", {"processId": self.ols.pid, "capabilities": {}, "workspaceFolders":
                                        [{"uri": "file:///home/rolly/proj/ammo", "name": "ammo"}]}, initialize_reply)
-
-    def sendOLSMessage(self, method: str, params: dict, response_callback: callable = None):
-        msg = f"{{\"jsonrpc\": \"2.0\", \"id\": {self.lsp_msg_id}, \"method\": \"{method}\", \"params\": {params}}}"
-        # print("sending stdin>", msg)
-        # self.com = str(f"Content-Length: {len(msg) + 0}\r\n\r\n{msg}")
-        if response_callback != None:
-            self.queued_ols_responses[self.lsp_msg_id] = response_callback
-
-        self.com.put(str(f"Content-Length: {len(msg) + 0}\r\n\r\n{msg}"))
-        self.lsp_msg_id += 1
-
-    # def queueOLSMessageResponse(self, msg_id: int, method: str, params: dict):
-    #     self.queued_ols_responses[msg_id] = {"method": method, "params": params}
-
-    # def queueOLSCallbackResponse(self, msg_id: int, )
 
     def endProcessThread(self):
         print("ols terminating")
@@ -283,12 +278,11 @@ class QCodeEditor(QTextEdit):
 
             outline = sout.readline()
             while len(outline) > 0:
-                ols_log.write(f"<--{outline}\r\n")
-                ols_log.flush()
-                # print("-->:", outline, end="")
-
                 # Ensure the output is a Content-Length header
                 if outline.startswith("Content-Length:"):
+                    ols_log.write(f"DEBUG <--{outline}")
+                    ols_log.flush()
+
                     # Read the next line
                     content_length = int(outline.split(":")[1].strip())
                     outline = sout.readline()
@@ -301,7 +295,7 @@ class QCodeEditor(QTextEdit):
                             # print("-->:", outline)
                             # outline2 = sout.readline()
                             # print("-2>:", outline2)
-                            ols_log.write(f"<--{outline}\r\n")
+                            ols_log.write(f"   {outline}\r\n")
                             ols_log.flush()
 
                             ols_result: dict = None
@@ -319,7 +313,7 @@ class QCodeEditor(QTextEdit):
                                     # print("here")
                                     queued_response = self.queued_ols_responses.pop(ols_result["id"], None)
                                     if queued_response != None:
-                                        ols_log.write(f"!Invoking Queued OLS Response:{queued_response}\r\n")
+                                        ols_log.write(f"DEBUG !Invoking Queued OLS Response:{queued_response}\r\n")
                                         ols_log.flush()
                                         queued_response(ols_result)
                                         # print("here2")
@@ -344,9 +338,9 @@ class QCodeEditor(QTextEdit):
 
             outline = serr.readline()
             while len(outline) > 0:
-                # TODO log errors
+                ols_log.write(f"ERROR -->{msg}\r\n")
+                ols_log.flush()
                 print("err>", outline)
-                # TODO process errors
                 outline = serr.readline()
 
             if self.com.qsize() > 0:
@@ -354,7 +348,7 @@ class QCodeEditor(QTextEdit):
                 msg = self.com.get()
                 # print("-->", msg)
                 # TODO log the input
-                ols_log.write(f"-->{msg}\r\n")
+                ols_log.write(f"DEBUG -->{msg}\r\n")
                 ols_log.flush()
                 wres = os.write(ip_fd, msg.encode())
                 if wres <= 0:
@@ -364,12 +358,8 @@ class QCodeEditor(QTextEdit):
 
             if self.focused_document != None and self.focused_document.file_modified and \
                 self.focused_document.last_symbol_request < self.focused_document.file_modified_time and \
-                time.time() - self.focused_document.file_modified_time > 5.0:
-                self.focused_document.last_symbol_request = time.time()
-                self.sendOLSMessage("textDocument/documentSymbol",
-                                    {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
-                                    self.processDocumentSymbols)
-                print("requesting symbols...")
+                time.time() - self.focused_document.file_modified_time > 4.0:
+                self.checkOdinSource()
             
             sleep(0.05)
 
@@ -403,16 +393,25 @@ class QCodeEditor(QTextEdit):
             for child in ddict["children"]:
                 symbol.children.append(self.parseDocumentSymbol(child))
 
-        print(f"Parsed Symbol: {symbol.name} {SYMBOL_KINDS[symbol.kind]} ({symbol.range.start.line}:{symbol.range.start.character} "\
-              f" {symbol.range.end.line}:{symbol.range.end.character}) ({symbol.selectionRange.start.line}:"\
-              f"{symbol.selectionRange.start.character} {symbol.selectionRange.end.line}:{symbol.selectionRange.end.character})"\
-              f" {len(symbol.children)}")
+        # print(f"Parsed Symbol: {symbol.name} {SYMBOL_KINDS[symbol.kind]} ({symbol.range.start.line}:{symbol.range.start.character} "\
+        #       f" {symbol.range.end.line}:{symbol.range.end.character}) ({symbol.selectionRange.start.line}:"\
+        #       f"{symbol.selectionRange.start.character} {symbol.selectionRange.end.line}:{symbol.selectionRange.end.character})"\
+        #       f" {len(symbol.children)}")
         return symbol
 
     def processDocumentSymbols(self, response: dict):
         self.focused_document.symbols.clear()
         for symbol in response["result"]:
             self.focused_document.symbols.append(self.parseDocumentSymbol(symbol))
+
+    def checkOdinSource(self):
+        pass
+        
+        # self.focused_document.last_symbol_request = time.time()
+        # self.sendOLSMessage("textDocument/documentSymbol",
+        #                     {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
+        #                     self.processDocumentSymbols)
+        # # print("requesting symbols...")
 
     def openFile(self, file_path: str):
         if file_path.endswith(".odin"):
