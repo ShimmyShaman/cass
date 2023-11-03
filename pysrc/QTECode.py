@@ -48,7 +48,7 @@ class QCodeDocument:
         self.file_path = ""
         self.file_content = ""
         self.symbols = []
-        self.last_symbol_request = time.time()
+        self.last_document_meta_info_request = time.time()
         self.edit_version = 0
         self.file_modified = False
         self.file_modified_time = 0
@@ -319,6 +319,16 @@ class QCodeEditor(QTextEdit):
                                         # print("here2")
                                         # self.sendOLSMessage(queued_response["method"], queued_response["params"])
                                         # print("here3")
+                                else:
+                                    # if ols_result.get("method") == "textDocument/publishDiagnostics":\
+                                    if ols_result.get("method") == "window/logMessage":
+                                        if ols_result["params"]["message"] != None \
+                                            and "intrinsics.odin" in ols_result["params"]["message"]:
+                                            pass
+                                        else:
+                                            print("LSP-window/logMessage:", ols_result["params"]["message"])
+                                    else:
+                                        print("ERROR unhandled LSP message:", ols_result.get("method"), "\r\n", ols_result)
 
                             # Continue reading STDOUT
                             outline = sout.readline()
@@ -357,9 +367,9 @@ class QCodeEditor(QTextEdit):
                 continue
 
             if self.focused_document != None and self.focused_document.file_modified and \
-                self.focused_document.last_symbol_request < self.focused_document.file_modified_time and \
+                self.focused_document.last_document_meta_info_request < self.focused_document.file_modified_time and \
                 time.time() - self.focused_document.file_modified_time > 4.0:
-                self.checkOdinSource()
+                self.updateDocumentMetaInfo()
             
             sleep(0.05)
 
@@ -404,14 +414,17 @@ class QCodeEditor(QTextEdit):
         for symbol in response["result"]:
             self.focused_document.symbols.append(self.parseDocumentSymbol(symbol))
 
-    def checkOdinSource(self):
-        pass
-        
-        # self.focused_document.last_symbol_request = time.time()
-        # self.sendOLSMessage("textDocument/documentSymbol",
-        #                     {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
-        #                     self.processDocumentSymbols)
-        # # print("requesting symbols...")
+    def updateDocumentMetaInfo(self):
+        self.focused_document.last_document_meta_info_request = time.time()
+
+        # Request Diagnostics
+        self.sendOLSMessage("textDocument/diagnostic", {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
+                            lambda response: print("diagnostic response:", response))
+
+        # print("requesting symbols...")
+        self.sendOLSMessage("textDocument/documentSymbol",
+                            {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
+                            self.processDocumentSymbols)
 
     def openFile(self, file_path: str):
         if file_path.endswith(".odin"):
@@ -448,6 +461,9 @@ class QCodeEditor(QTextEdit):
                                                       "languageId": "odin",
                                                       "version": 1,
                                                       "text": new_document.file_content}})
+                self.sendOLSMessage("textDocument/diagnostic", {"textDocument": {
+                                                                    "uri": f"file://{self.focused_document.file_path}"}},
+                            lambda response: print("diagnostic response:", response))
                 self.sendOLSMessage("textDocument/documentSymbol",
                                     {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
                                     self.processDocumentSymbols)
