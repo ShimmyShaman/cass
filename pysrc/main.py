@@ -127,13 +127,15 @@ class MyWindow(QWidget):
 
    def init_working_view(self, app_view):
       working_view = QGridLayout()
-      working_view.setContentsMargins(0, 0, 0, 12)
+      working_view.setContentsMargins(0, 0, 0, 0)
       app_view.addLayout(working_view, 0, 1)
 
-      # Set the background color of the QGridLayout
       self.code_editor = QCodeEditor()
-
       working_view.addWidget(self.code_editor, 0, 0)
+
+
+
+      # Set the background color of the QGridLayout
 
    def keyPressEvent(self, event):
       #  if key is f4 or escape
@@ -170,6 +172,8 @@ def openProject(folder_path):
    # Get the last folder name from the path
    folder_name = folder_path.split("/")[-1]
    win.project_button.setText(folder_name)
+   
+   win.code_editor.openWorkspace(folder_path)
 
 # Global variables
 app = QApplication(sys.argv)

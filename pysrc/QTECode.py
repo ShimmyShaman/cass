@@ -80,6 +80,7 @@ class QCodeEditor(QTextEdit):
         # Vars
         self.open_documents = dict()
         self.focused_document = None
+        self.lsp = None
 
         # Settings
         # self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
@@ -212,20 +213,10 @@ class QCodeEditor(QTextEdit):
         self.process_thread.daemon = True
         print("Main    : before running thread")
         self.process_thread.start()
-        sleep(1)
-        
-        # Initialize message
-        self.lsp_msg_id = 1
-        self.queued_ols_responses = dict()
-
-        def initialize_reply(response: dict):
-            self.sendOLSMessage("initialized", {})
-        self.sendOLSMessage("initialize", {"processId": self.ols.pid, "capabilities": {}, "workspaceFolders":
-                                       [{"uri": "file:///home/rolly/proj/ammo", "name": "ammo"}]}, initialize_reply)
 
     def endProcessThread(self):
         print("ols terminating")
-        self.ols.terminate()
+        self.lsp.terminate()
         print("ols terminated...")
         self.process_thread.join()
         print("process_thread rejoined")
@@ -255,14 +246,14 @@ class QCodeEditor(QTextEdit):
         serr = os.fdopen(ep_fd)
         ols_log = io.open(ols_log_path, "w+")
         print("pipes opened...")
-        # ols_path = "../ols/ols"
-        ols_path = "/home/rolly/.config/Code/User/globalStorage/danielgavin.ols/122834134/ols-x86_64-unknown-linux-gnu"
-        self.ols = subprocess.Popen([ols_path], stdin=ip_fd, stdout=op_fd, stderr=ep_fd, shell=False,
+        ols_path = "../ols/ols"
+        # ols_path = "/home/rolly/.config/Code/User/globalStorage/danielgavin.ols/122834134/ols-x86_64-unknown-linux-gnu"
+        self.lsp = subprocess.Popen([ols_path], stdin=ip_fd, stdout=op_fd, stderr=ep_fd, shell=False,
                                         universal_newlines=True)
         print("ols begun")
         
         while True:
-            if self.ols.poll() != None:
+            if self.lsp.poll() != None:
                 # print("ols process exited")
                 break
             
@@ -374,7 +365,8 @@ class QCodeEditor(QTextEdit):
             sleep(0.05)
 
         # Terminate the process and close the pipes
-        self.ols.terminate()
+        self.lsp.terminate()
+        self.lsp = None
 
         sout.close()
         serr.close()
@@ -417,14 +409,44 @@ class QCodeEditor(QTextEdit):
     def updateDocumentMetaInfo(self):
         self.focused_document.last_document_meta_info_request = time.time()
 
-        # Request Diagnostics
-        self.sendOLSMessage("textDocument/diagnostic", {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
-                            lambda response: print("diagnostic response:", response))
+        # # Request Diagnostics
+        # self.sendOLSMessage("textDocument/diagnostic", {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
+        #                     lambda response: print("diagnostic response:", response))
 
         # print("requesting symbols...")
         self.sendOLSMessage("textDocument/documentSymbol",
                             {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
                             self.processDocumentSymbols)
+
+    def openWorkspace(self, workspace: str):
+        self.workspace = workspace
+        self.workspace_name = workspace.split("/")[-1]
+        self.workspace_uri = f"file://{workspace}"
+
+        r = 0
+        ra = 0
+        while self.lsp == None:
+            r += 1
+            sleep(0.1)
+            if r > 10:
+                print("ols == None")
+                return
+        
+        # Initialize message
+        self.lsp_msg_id = 1
+        self.queued_ols_responses = dict()
+
+        def initialize_reply(response: dict):
+            self.sendOLSMessage("initialized", {})
+
+        self.sendOLSMessage("initialize", {"processId": self.lsp.pid, "capabilities": {}, "workspaceFolders":
+                                       [{"uri": "file:///home/rolly/proj/cass", "name": "cass"}]}, initialize_reply)
+        # self.sendOLSMessage("initialize", {"processId": self.lsp.pid, "capabilities": {},
+        #                                     "workspaceFolders":[{"uri": self.workspace_uri, "name": self.workspace_name}]},
+        #                          initialize_reply)
+        #                                                                 # "workspace": { "inlineValue": True,
+        #                                                                 #                "inlayHint": True,
+        #                                                                 #                "diagnostics": True}
 
     def openFile(self, file_path: str):
         if file_path.endswith(".odin"):
@@ -461,13 +483,13 @@ class QCodeEditor(QTextEdit):
                                                       "languageId": "odin",
                                                       "version": 1,
                                                       "text": new_document.file_content}})
-                self.sendOLSMessage("textDocument/diagnostic", {"textDocument": {
-                                                                    "uri": f"file://{self.focused_document.file_path}"}},
-                            lambda response: print("diagnostic response:", response))
+                # self.sendOLSMessage("textDocument/diagnostic", {"textDocument": {
+                #                                                     "uri": f"file://{self.focused_document.file_path}"}},
+                            # lambda response: print("diagnostic response:", response))
                 self.sendOLSMessage("textDocument/documentSymbol",
                                     {"textDocument": {"uri": f"file://{self.focused_document.file_path}"}},
                                     self.processDocumentSymbols)
-                
+    
             return True
         if file_path.endswith(".py"):
             print("Opening file", file_path)
@@ -481,6 +503,8 @@ class QCodeEditor(QTextEdit):
     def saveAllModifiedFiles(self):
         save_count = 0
         for document in self.open_documents.values():
+            self.sendOLSMessage("textDocument/didSave",
+                                {"textDocument": {"uri": f"file://{document.file_path}"}, "text": document.file_content})
             if document.file_modified == True:
                 save_count += 1
                 document.file_modified = False
@@ -489,7 +513,5 @@ class QCodeEditor(QTextEdit):
                     writer.flush()
                     print("wrote to file:", document.file_path)
                 document.file_saved = True
-                self.sendOLSMessage("textDocument/didSave",
-                                    {"textDocument": {"uri": f"file://{document.file_path}"}})
                 
         print(f"saved {save_count} files")

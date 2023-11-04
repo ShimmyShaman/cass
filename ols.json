@@ -20,6 +20,5 @@
     "enable_fake_methods": true,
     "enable_inlay_hints": true,
     "odin_command": "/home/rolly/proj/Odin/odin",
-    "checker_args": ["-vet", "all"],
-    "verbose": false
+    "verbose": true
 }
